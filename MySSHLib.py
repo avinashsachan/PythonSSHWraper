@@ -6,7 +6,7 @@ import threading
 
 
 class MySSHLib:
-    def __init__(self, ip, port, username, password):
+    def __init__(self, ip, port, username, password, timeout: int = 30):
         self.ip = ip
         self.port = port
         self._username = username
@@ -17,6 +17,7 @@ class MySSHLib:
         self.channel = channel.Channel(chanid=100)
         self.sessionLog = ""
         self.bufferLog = ""
+        self.timeout = timeout
 
     def __del__(self):
         self.disconnect()
@@ -31,11 +32,11 @@ class MySSHLib:
     def onReceiveData(self):
         try:
             if self.client is None or self.channel is None: return
-            x = self.channel.recv(1024)
+            x = self.channel.recv(1024 * 10)
             if x != b'':
                 z = x.decode("utf-8")
                 self.sessionLog += z
-                self.bufferLog = (self.bufferLog + z)[-50:]
+                self.bufferLog = ((self.bufferLog + z)[-50:]).lower()
                 t = threading.Thread(target=self.onReceiveData)
                 t.start()
         except:
@@ -51,3 +52,21 @@ class MySSHLib:
             t.start()
         except Exception as e:
             raise e
+
+    def wait(self, waitFor: str, breakCharacter: str = None):
+        split_part = []
+        try:
+            if breakCharacter is None:
+                split_part.append(waitFor.lower())
+            else:
+                split_part = [x.lower() for x in waitFor.split(breakCharacter)]
+            dt = datetime.now() + timedelta(seconds=self.timeout)
+            while datetime.now() <= dt:
+                time.sleep(.05)
+                for i in range(0, len(split_part)):
+                    if split_part[i] in self.bufferLog:
+                        return i
+
+            raise TimeoutError("Exit not found")
+        except:
+            pass
