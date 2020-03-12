@@ -8,7 +8,7 @@ import threading
 class MySSHLib:
     def __init__(self, ip: str, username: str, password: str, port: int = 22, timeout: int = 30):
         self.logger = logging.getLogger("MySSHLib")
-        self.logger.setLevel(level=logging.DEBUG)
+        self.logger.setLevel(level=logging.ERROR)
         ch = logging.StreamHandler()
         ch.setLevel(level=logging.DEBUG)
         self.logger.addHandler(ch)
